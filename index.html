@@ -1,0 +1,46 @@
+><!DOCTYPE html>
+<html>
+<head>
+    <title>Spaco</title>
+        <style>
+        body {
+            background-image :url('/img/images.jpg');
+            background-repeat: repeat;
+        }
+
+        </style>
+
+    </head>
+<body id="mybody">
+
+    <img src="/img/Ship3.jpg" style="position: absolute; left:200px; top:700px;" width="50px" height="50px" id="square2" ></img>
+    
+
+
+
+
+
+    <script>
+         var lastMouseX = 0;
+         var lastMouseY = 0;
+         document.getElementById("mybody").onmousemove = mousemoved;
+
+
+        function mousemoved(mouseEvent) {
+
+             if(!mouseEvent)return;
+            document.getElementById("square2").style.left = mouseEvent.clientX - 50 + "px";
+            lastMouseX = mouseEvent.clientX;
+            lastMouseY = mouseEvent.clientY;                // document.getElementById("square2").style.top = mouseEvent.clientY + "px";
+
+
+            }
+
+
+    </script>
+ 
+    
+</body>
+</html>
+
+<img src="img/Ship.jfiff.png" style="position: absolute;" />
