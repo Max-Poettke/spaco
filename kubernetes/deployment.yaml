@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: praktikum-spaco-deployment
+  labels:
+    app: praktikum-spaco
+spec:
+  selector:
+    matchLabels:
+      app: praktikum-spaco
+  template:
+    metadata:
+      labels:
+        app: praktikum-spaco
+    spec:
+      containers:
+      - name: spaco
+        image: maxpoettke/spaco:v3
+        ports:
+        - containerPort: 80

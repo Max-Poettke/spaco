@@ -1,46 +1,140 @@
-><!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html style="height:100%; width:100%;">
 <head>
     <title>Spaco</title>
         <style>
         body {
+            overflow: hidden;
+            margin:0px;
+        }
+        #mybody {
             background-image :url('/img/images.jpg');
             background-repeat: repeat;
+            overflow: hidden;
         }
 
         </style>
 
     </head>
-<body id="mybody">
+<body style="height:100%; width:100%;">
 
-    <img src="/img/Ship3.jpg" style="position: absolute; left:200px; top:700px;" width="50px" height="50px" id="square2" ></img>
-    
-
-
-
-
+    <div id="mybody" style="height:100%; width:100%;">
+        <img src="/img/Ship3.png" style="position: absolute; left:200px; bottom:50px;" width="50px" height="50px" id="square2" ></img>
+    </div>
 
     <script>
          var lastMouseX = 0;
          var lastMouseY = 0;
-         document.getElementById("mybody").onmousemove = mousemoved;
 
+         document.getElementById("mybody").onmousemove = mousemoved;
+         document.getElementById("mybody").onclick = mouseclicked;
+
+         var audioPlaying = false;
+         function playBackground() {
+             if(audioPlaying) return;
+
+             audioPlaying = true;
+
+             var audio = new Audio('sound/background.mp3');
+             audio.volume = 0.5;
+             audio.loop=true;
+             audio.play();
+         }
+
+        var explosions = [];
+        var rockets = [];
+
+        setInterval(mainGameloop, 20);
+
+        function mainGameloop(){
+
+            // Remove explosions after TimetoLive expires
+            for(var i = 0; i<explosions.length; i++){
+                var nextExplosion = explosions[i];
+                nextExplosion.timeToLive = nextExplosion.timeToLive -1;
+                if(nextExplosion.timeToLive <= 0){
+                    hideElement(nextExplosion.explosion);
+                    explosions.splice(i, 1);
+                }
+            }
+            // Move rockets
+            for(var i = 0; i<rockets.length; i++){
+                var nextRocket = rockets[i];
+                nextRocket.timeToLive = nextRocket.timeToLive -1;
+                if(nextRocket.timeToLive <= 0){
+                    createExplosion(nextRocket.xPosition-18, nextRocket.yPosition);
+                    hideElement(nextRocket.rocket);
+                    rockets.splice(i, 1);
+                } else {
+                    nextRocket.speed = nextRocket.speed+0.6;
+                    nextRocket.yPosition = nextRocket.yPosition + nextRocket.speed;
+                    nextRocket.rocket.style.bottom = nextRocket.yPosition + "px";
+                }
+            }
+        }
+
+        function mouseclicked(mouseEvent) {
+            playBackground();
+            createRocket(lastMouseX -50, 65);
+         }
+
+         function createRocket(x, y) {
+
+            // create new rocket element
+            var newRocket = document.createElement("img");
+            newRocket.src= "/img/rocket.gif";
+            newRocket.style.position = "absolute";
+            newRocket.style.bottom = y + "px";
+            newRocket.style.left = x + "px"
+            newRocket.style.width = "15px"
+            newRocket.style.height = "20px"
+
+            var canvas = document.getElementById("mybody");
+            canvas.insertAdjacentElement("afterbegin", newRocket);
+
+            rockets.push( { rocket: newRocket, timeToLive: 30 + Math.random() * 15, speed: 1, xPosition: x,  yPosition: y } )
+            var audio = new Audio('sound/Gun.mp3');
+            audio.volume = Math.random() / 2;
+            audio.play();
+
+        }
+
+
+        function createExplosion(x, y) {
+
+            // create new explosion element
+            var newExplosion = document.createElement("img");
+            newExplosion.src= "/img/explosion.gif";
+            newExplosion.style.position = "absolute";
+            newExplosion.style.bottom = y + "px";
+            newExplosion.style.left = x + "px"
+            newExplosion.style.width = "50px"
+            newExplosion.style.height = "50px"
+
+            var canvas = document.getElementById("mybody");
+            canvas.insertAdjacentElement("afterbegin", newExplosion);
+
+            explosions.push( { explosion: newExplosion, timeToLive: 50 } )
+            var audio = new Audio('sound/Explosion.mp3');
+            audio.volume = 0.5 + Math.random() / 2;
+            audio.play();
+        }
+
+         function hideElement(elementToHide) {
+            var canvas = document.getElementById("mybody");
+            canvas.removeChild(elementToHide);
+         }
 
         function mousemoved(mouseEvent) {
 
              if(!mouseEvent)return;
             document.getElementById("square2").style.left = mouseEvent.clientX - 50 + "px";
             lastMouseX = mouseEvent.clientX;
-            lastMouseY = mouseEvent.clientY;                // document.getElementById("square2").style.top = mouseEvent.clientY + "px";
-
-
+            lastMouseY = mouseEvent.clientY;                
+            // document.getElementById("square2").style.top = mouseEvent.clientY + "px";
             }
-
-
     </script>
  
     
 </body>
 </html>
-
-<img src="img/Ship.jfiff.png" style="position: absolute;" />
