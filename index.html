@@ -1,88 +1,197 @@
 <!DOCTYPE html>
 <html style="height:100%; width:100%;">
+
 <head>
     <title>Spaco</title>
-        <style>
+    <style>
         body {
             overflow: hidden;
-            margin:0px;
+            margin: 0px;
         }
+
         #mybody {
-            background-image :url('/img/images.jpg');
+            background-image: url('/img/images.jpg');
             background-repeat: repeat;
             overflow: hidden;
         }
+    </style>
 
-        </style>
+</head>
 
-    </head>
 <body style="height:100%; width:100%;">
 
     <div id="mybody" style="height:100%; width:100%;">
-        <img src="/img/Ship3.png" style="position: absolute; left:200px; bottom:50px;" width="50px" height="50px" id="square2" ></img>
+        <img src="/img/Ship3.png" style="position: absolute; left:200px; bottom:50px;" width="50px" height="50px"
+            id="square2"></img>
     </div>
 
     <script>
-         var lastMouseX = 0;
-         var lastMouseY = 0;
+        var lastMouseX = 0;
+        var lastMouseY = 0;
 
-         document.getElementById("mybody").onmousemove = mousemoved;
-         document.getElementById("mybody").onclick = mouseclicked;
+        document.getElementById("mybody").onmousemove = mousemoved;
+        document.getElementById("mybody").onclick = mouseclicked;
 
-         var audioPlaying = false;
-         function playBackground() {
-             if(audioPlaying) return;
+        var audioPlaying = false;
+        function playBackground() {
+            if (audioPlaying) return;
 
-             audioPlaying = true;
+            audioPlaying = true;
 
-             var audio = new Audio('sound/background.mp3');
-             audio.volume = 0.5;
-             audio.loop=true;
-             audio.play();
-         }
+            var audio = new Audio('sound/background.mp3');
+            audio.volume = 0.5;
+            audio.loop = true;
+            audio.play();
+        }
 
         var explosions = [];
         var rockets = [];
+        var enemies = []
+
+        var path1 = [
+            {
+                x: 0,
+                y: 0,
+                speed: 10
+            },
+            {
+                x: 475,
+                y: 200,
+                speed: 5
+            },
+            {
+                x: 475,
+                y: 20,
+                speed: 5
+            },
+        ]
+        var path2 = [
+            {
+                x: 1000,
+                y: 0,
+                speed: 10
+            },
+            {
+                x: 525,
+                y: 200,
+                speed: 5
+            },
+            {
+                x: 525,
+                y: 20,
+                speed: 5
+            },
+        ]
+        var path3 = [
+            {
+                x: 0,
+                y: 250,
+                speed: 10
+            },
+            {
+                x: 1000,
+                y: 250,
+                speed: 20
+            },
+        ]
+
+        createFormation("/img/Enemy1.png", path1, 15, 50, 12)
+        createFormation("/img/Enemy2.png", path2, 15, 500, 12)
+        createFormation("/img/Enemy2.png", path3, 5, 0, 12)
 
         setInterval(mainGameloop, 20);
 
-        function mainGameloop(){
+        function mainGameloop() {
 
             // Remove explosions after TimetoLive expires
-            for(var i = 0; i<explosions.length; i++){
+            for (var i = 0; i < explosions.length; i++) {
                 var nextExplosion = explosions[i];
-                nextExplosion.timeToLive = nextExplosion.timeToLive -1;
-                if(nextExplosion.timeToLive <= 0){
+                nextExplosion.timeToLive = nextExplosion.timeToLive - 1;
+                if (nextExplosion.timeToLive <= 0) {
                     hideElement(nextExplosion.explosion);
                     explosions.splice(i, 1);
                 }
             }
             // Move rockets
-            for(var i = 0; i<rockets.length; i++){
+            for (var i = 0; i < rockets.length; i++) {
                 var nextRocket = rockets[i];
-                nextRocket.timeToLive = nextRocket.timeToLive -1;
-                if(nextRocket.timeToLive <= 0){
-                    createExplosion(nextRocket.xPosition-18, nextRocket.yPosition);
+                nextRocket.timeToLive = nextRocket.timeToLive - 1;
+                if (nextRocket.timeToLive <= 0) {
+                    createExplosion(nextRocket.xPosition - 18, nextRocket.yPosition);
                     hideElement(nextRocket.rocket);
                     rockets.splice(i, 1);
                 } else {
-                    nextRocket.speed = nextRocket.speed+0.6;
+                    nextRocket.speed = nextRocket.speed + 0.6;
                     nextRocket.yPosition = nextRocket.yPosition + nextRocket.speed;
                     nextRocket.rocket.style.bottom = nextRocket.yPosition + "px";
                 }
             }
+            // Move enemies
+            enemies.forEach((nextEnemy) => {
+                if (nextEnemy.spawntime > 0) {
+                    nextEnemy.spawntime -= 1
+                    return
+                }
+                if (nextEnemy.spawntime == 0) {
+                    nextEnemy.spawntime -= 1
+                    nextEnemy.enemy.style.left = nextEnemy.path[0].x + "px"
+                    nextEnemy.enemy.style.top = nextEnemy.path[0].y + "px"
+                    nextEnemy.xPosition = nextEnemy.path[0].x
+                    nextEnemy.yPosition = nextEnemy.path[0].y
+
+
+                    var canvas = document.getElementById("mybody");
+                    canvas.insertAdjacentElement("afterbegin", nextEnemy.enemy);
+                    return
+                }
+                var destination = nextEnemy.path[nextEnemy.nextwaypoint]
+                var speed = destination.speed
+                var start = nextEnemy.path[nextEnemy.nextwaypoint - 1 < 0 ? nextEnemy.path.length - 1 : nextEnemy.nextwaypoint - 1]
+                var a = destination.y - start.y
+                var b = destination.x - start.x
+                var c = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2))
+                var deltaX = speed * b / c
+                var deltaY = speed * a / c
+
+                nextEnemy.xPosition += deltaX
+                nextEnemy.yPosition += deltaY
+
+                if (deltaX > 0 && Math.ceil(nextEnemy.xPosition) >= destination.x) {
+                    nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
+                    nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
+                    nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
+                }
+                else if (deltaY < 0 && Math.floor(nextEnemy.yPosition) <= destination.y) {
+                    nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
+                    nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
+                    nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
+                }
+                else if (deltaY > 0 && Math.ceil(nextEnemy.yPosition) >= destination.y) {
+                    nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
+                    nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
+                    nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
+                }
+                else if (deltaX < 0 && Math.floor(nextEnemy.xPosition) <= destination.x) {
+                    nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
+                    nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
+                    nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
+                }
+
+                nextEnemy.enemy.style.left = nextEnemy.xPosition + "px"
+                nextEnemy.enemy.style.top = nextEnemy.yPosition + "px"
+            })
         }
 
         function mouseclicked(mouseEvent) {
             playBackground();
-            createRocket(lastMouseX -50, 65);
-         }
+            createRocket(lastMouseX - 50, 65);
+        }
 
-         function createRocket(x, y) {
+        function createRocket(x, y) {
 
             // create new rocket element
             var newRocket = document.createElement("img");
-            newRocket.src= "/img/rocket.gif";
+            newRocket.src = "/img/rocket.gif";
             newRocket.style.position = "absolute";
             newRocket.style.bottom = y + "px";
             newRocket.style.left = x + "px"
@@ -92,7 +201,7 @@
             var canvas = document.getElementById("mybody");
             canvas.insertAdjacentElement("afterbegin", newRocket);
 
-            rockets.push( { rocket: newRocket, timeToLive: 30 + Math.random() * 15, speed: 1, xPosition: x,  yPosition: y } )
+            rockets.push({ rocket: newRocket, timeToLive: 30 + Math.random() * 15, speed: 1, xPosition: x, yPosition: y })
             var audio = new Audio('sound/Gun.mp3');
             audio.volume = Math.random() / 2;
             audio.play();
@@ -104,7 +213,7 @@
 
             // create new explosion element
             var newExplosion = document.createElement("img");
-            newExplosion.src= "/img/explosion.gif";
+            newExplosion.src = "/img/explosion.gif";
             newExplosion.style.position = "absolute";
             newExplosion.style.bottom = y + "px";
             newExplosion.style.left = x + "px"
@@ -114,27 +223,59 @@
             var canvas = document.getElementById("mybody");
             canvas.insertAdjacentElement("afterbegin", newExplosion);
 
-            explosions.push( { explosion: newExplosion, timeToLive: 50 } )
+            explosions.push({ explosion: newExplosion, timeToLive: 50 })
             var audio = new Audio('sound/Explosion.mp3');
             audio.volume = 0.5 + Math.random() / 2;
             audio.play();
         }
 
-         function hideElement(elementToHide) {
+        function hideElement(elementToHide) {
             var canvas = document.getElementById("mybody");
             canvas.removeChild(elementToHide);
-         }
+        }
 
         function mousemoved(mouseEvent) {
 
-             if(!mouseEvent)return;
+            if (!mouseEvent) return;
             document.getElementById("square2").style.left = mouseEvent.clientX - 50 + "px";
             lastMouseX = mouseEvent.clientX;
-            lastMouseY = mouseEvent.clientY;                
+            lastMouseY = mouseEvent.clientY;
             // document.getElementById("square2").style.top = mouseEvent.clientY + "px";
+        }
+
+        function createFormation(image, flightPath, numberOfEnemies, initialSpawnTime, spawnDifference) {
+
+            let currentSpawnTime = initialSpawnTime;
+            for (let i = 0; i < numberOfEnemies; i++) {
+                createEnemy1(image, flightPath, currentSpawnTime)
+                currentSpawnTime += spawnDifference;
             }
+
+
+        }
+
+        function createEnemy1(image, flightPath, spawnTime) {
+
+            //create new enemy1 element
+            var newEnemy = document.createElement("img")
+            newEnemy.src = image
+            newEnemy.style.position = "absolute"
+            newEnemy.style.width = "50px"
+            newEnemy.style.height = "50px"
+
+            enemies.push({
+                enemy: newEnemy,
+                spawntime: spawnTime,
+                xPosition: 0,
+                yPosition: 0,
+                path: flightPath,
+                nextwaypoint: 1
+            })
+
+        }
     </script>
- 
-    
+
+
 </body>
+
 </html>
