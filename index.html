@@ -22,7 +22,7 @@
 
     <div id="mybody" style="height:100%; width:100%;">
         <img src="/img/Ship3.png" style="position: absolute; left:200px; bottom:50px;" width="50px" height="50px"
-            id="square2"></img>
+            id="square2" />
     </div>
 
     <script>
@@ -46,7 +46,7 @@
 
         var explosions = [];
         var rockets = [];
-        var enemies = []
+        var enemies = [];
 
         var path1 = [
             {
@@ -62,31 +62,31 @@
             {
                 x: 475,
                 y: 20,
-                speed: 5
+                speed: 2
             },
         ]
         var path2 = [
             {
                 x: 1000,
                 y: 0,
-                speed: 10
+                speed: 2
             },
             {
                 x: 525,
                 y: 200,
-                speed: 5
+                speed: 2
             },
             {
                 x: 525,
                 y: 20,
-                speed: 5
+                speed: 2
             },
         ]
         var path3 = [
             {
                 x: 0,
                 y: 250,
-                speed: 10
+                speed: 2
             },
             {
                 x: 1000,
@@ -117,7 +117,7 @@
                 var nextRocket = rockets[i];
                 nextRocket.timeToLive = nextRocket.timeToLive - 1;
                 if (nextRocket.timeToLive <= 0) {
-                    createExplosion(nextRocket.xPosition - 18, nextRocket.yPosition);
+                    // createExplosion(nextRocket.xPosition - 18, nextRocket.yPosition);
                     hideElement(nextRocket.rocket);
                     rockets.splice(i, 1);
                 } else {
@@ -127,7 +127,7 @@
                 }
             }
             // Move enemies
-            enemies.forEach((nextEnemy) => {
+            enemies.forEach((nextEnemy, index) => {
                 if (nextEnemy.spawntime > 0) {
                     nextEnemy.spawntime -= 1
                     return
@@ -179,6 +179,19 @@
 
                 nextEnemy.enemy.style.left = nextEnemy.xPosition + "px"
                 nextEnemy.enemy.style.top = nextEnemy.yPosition + "px"
+
+                var booom = rockets.reduce ( (booomed, nextRocket) => {
+
+                    return booomed || checkCollision(nextEnemy, nextRocket)
+
+                }, false );
+
+                if (booom) {
+                    var canvas = document.getElementById("mybody");
+                    nextEnemy.enemy.style.display = "none";
+                    enemies.splice(index, 1);
+                    createExplosion(nextEnemy.xPosition, canvas.offsetHeight - nextEnemy.yPosition - 50);
+                }
             })
         }
 
@@ -273,10 +286,13 @@
             })
 
         }
+        // Tracks Distance between Enemy and Rocket
+        function checkCollision(nextEnemy, nextRocket) {
+            var canvas = document.getElementById("mybody");
+            var distanceX = Math.abs(nextEnemy.xPosition - nextRocket.xPosition)
+            var distanceY = Math.abs(nextEnemy.yPosition - (canvas.offsetHeight - nextRocket.yPosition))
 
-        function trackDstance() {
-            var distaneX = nextEnemy.xPosition
-            var distanceY = nextEnemy.yPosition
+            return distanceX < 25 && distanceY < 25
         }
     </script>
 
