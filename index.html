@@ -47,6 +47,7 @@
         var explosions = [];
         var rockets = [];
         var enemies = [];
+        var scores = [];
 
         var path1 = [
             {
@@ -98,6 +99,7 @@
         createFormation("/img/Enemy1.png", path1, 15, 50, 12)
         createFormation("/img/Enemy2.png", path2, 15, 500, 12)
         createFormation("/img/Enemy2.png", path3, 5, 0, 12)
+        
 
         setInterval(mainGameloop, 20);
 
@@ -112,6 +114,9 @@
                     explosions.splice(i, 1);
                 }
             }
+
+
+             
             // Move rockets
             for (var i = 0; i < rockets.length; i++) {
                 var nextRocket = rockets[i];
@@ -127,12 +132,13 @@
                 }
             }
             // Move enemies
-            enemies.forEach((nextEnemy, index) => {
+            enemies.forEach((nextEnemy, index) => {  
                 if (nextEnemy.spawntime > 0) {
                     nextEnemy.spawntime -= 1
                     return
                 }
-                if (nextEnemy.spawntime == 0) {
+                if (nextEnemy.spawntime == 0 && (!nextEnemy.scoreExpiration || nextEnemy.scoreExpiration > 0)) {
+                    nextEnemy.scoreExpiration -= 1
                     nextEnemy.spawntime -= 1
                     nextEnemy.enemy.style.left = nextEnemy.path[0].x + "px"
                     nextEnemy.enemy.style.top = nextEnemy.path[0].y + "px"
@@ -152,7 +158,7 @@
                 var c = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2))
                 var deltaX = speed * b / c
                 var deltaY = speed * a / c
-
+                                     
                 nextEnemy.xPosition += deltaX
                 nextEnemy.yPosition += deltaY
 
@@ -190,9 +196,20 @@
                     var canvas = document.getElementById("mybody");
                     nextEnemy.enemy.style.display = "none";
                     enemies.splice(index, 1);
+                    showScoreOnDeath(nextEnemy, 100, 500);                                             
                     createExplosion(nextEnemy.xPosition, canvas.offsetHeight - nextEnemy.yPosition - 50);
                 }
             })
+
+            //Remove scoreOnDeath after timetoLive expires
+            for (var i = 0; i < scores.length; i++){
+                var scoreOnDeath = scores[i] ;
+                scoreOnDeath.timeToLive -= 1;
+                if (scoreOnDeath.timeToLive == 0) {
+                    hideElement(scoreOnDeath.scoreDisplay)
+                }
+            }
+            //Decrease scoreOnDeath over time
         }
 
         function mouseclicked(mouseEvent) {
@@ -263,7 +280,41 @@
                 createEnemy1(image, flightPath, currentSpawnTime)
                 currentSpawnTime += spawnDifference;
             }
+            
+        }
+            //show scoreOnDeath
+        function showScoreOnDeath (nextEnemy,timeToLive,scoreExpiration){
+           
 
+            //create new enemy1 element
+            var scoreDisplay = document.createElement("div")
+            
+            var scoreOnDeath = scoreExpiration + ""
+            scoreDisplay.innerText = scoreOnDeath 
+            scoreDisplay.style.position = "absolute"
+            scoreDisplay.style.color = "white"
+            scoreDisplay.style.width = "50px"
+            scoreDisplay.style.height = "50px"
+
+         
+            scoreDisplay.style.position = "absolute"
+            scoreDisplay.style.left = nextEnemy.xPosition +"px"
+            scoreDisplay.style.top = nextEnemy.yPosition +"px"
+            scoreDisplay.style.zIndex = 100
+            
+
+            scores.push({
+                scores: scoreOnDeath,
+                scoreExpiration: scoreExpiration,
+                timeToLive: timeToLive,
+                xPosition: nextEnemy.xPosition,
+                yPosition: nextEnemy.yPosition,
+                scoreDisplay : scoreDisplay
+
+            })
+            
+            var canvas = document.getElementById("mybody");
+            canvas.insertAdjacentElement("afterbegin", scoreDisplay);
 
         }
 
