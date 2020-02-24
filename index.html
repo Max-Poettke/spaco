@@ -16,6 +16,7 @@
         body {
             overflow: hidden;
             margin: 0px;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         #mybody {
@@ -30,15 +31,18 @@
 <body style="height:100%; width:100%;">
 
     <div
-        style="float:right; padding-left:10px; height:100%; width:100px; z-index: 200;color:white; border: solid black 2px; background-color:rgba(0, 0, 0, 0.8);">
+        style="float:right; padding-left:10px; height:100%; width:100px; z-index: 200;color:white; border: solid black 2px; background-color:rgba(0, 0, 0, 0.8); font-size:12px;">
         <h2>Score:</h2>
         <span id="score" style="color: green; font-weight:bold; ">0 Points</span>
+        <h2>Enemies:</h2>
+        <span id="enemies" style="color: green; font-weight:bold; "></span>
+        <h2>Weapons:</h2>
+        <span id="weapons" style="color: green; font-weight:bold; ">Gun</span>
     </div>
 
     <div id="mybody" style="height:100%;">
         <img src="/img/Ship3.png" style="position: absolute; left:200px; bottom:50px;" width="50px" height="50px"
             id="square2" />
-
     </div>
 
     <script>
@@ -47,6 +51,7 @@
         var currentScore = 0;
         var doubleGun = false;
         var rocketAcceleration = 0.2;
+        var startElement = null;
 
         var canvas = document.getElementById("mybody");
         var screenWidth = canvas.offsetWidth;
@@ -60,8 +65,6 @@
             return Math.round(baseX / 1000 * screenWidth);
         }
 
-        document.getElementById("mybody").onmousemove = mousemoved;
-        document.getElementById("mybody").onclick = mouseclicked;
 
         var audioPlaying = false;
         function playBackground() {
@@ -128,19 +131,47 @@
             },
         ]
 
-        createFormation("/img/Enemy1.png", path1, 15, 50, 12, 500)
+        createFormation("/img/Enemy1.png", path1, 15, 150, 12, 500)
         createFormation("/img/Enemy2.png", path2, 15, 500, 12, 1000)
-        createFormation("/img/Enemy3.png", path3, 5, 0, 12, 10)
+        createFormation("/img/Enemy3.png", path3, 5, 100, 12, 10)
 
 
         createFormation("/img/Enemy1.png", path1, 15, 1050, 12, 500)
         createFormation("/img/Enemy2.png", path2, 15, 1500, 12, 1000)
         createFormation("/img/Enemy3.png", path3, 5, 1000, 12, 10)
 
+        document.getElementById("enemies").innerText = enemies.length;
+        document.getElementById("mybody").onmousemove = mousemoved;
 
+        showStart();
 
-        
-        setInterval(mainGameloop, 20);
+        function showStart(){
+            var canvas = document.getElementById("mybody");
+            startElement = document.createElement("div")
+            startElement.style.left = canvas.offsetWidth / 2 - 150 + "px";
+            startElement.style.top = canvas.offsetHeight / 2 - 100 + "px";
+            startElement.style.width = "300px";
+            startElement.style.height = "150px";
+            startElement.style.position = "absolute";
+            startElement.style.fontSize = 30 + "px";
+            startElement.style.fontWeight = "bold";
+            startElement.style.textAlign = "center";
+            startElement.style.color = "green";
+            startElement.style.paddingTop = "50px"
+            startElement.style.border = "green 3px solid";
+            startElement.style.backgroundColor = "rgba(255,255,255,0.7)";
+            startElement.innerHTML = "READY</br>Click here to start"
+            startElement.onclick = () => startGame();
+            canvas.appendChild(startElement);
+        }
+
+        function startGame(){
+            var canvas = document.getElementById("mybody");
+            canvas.removeChild(startElement);
+            document.getElementById("mybody").onclick = mouseclicked;
+    
+            setInterval(mainGameloop, 20);
+        }
 
         function mainGameloop() {
 
@@ -153,8 +184,6 @@
                     explosions.splice(i, 1);
                 }
             }
-
-
 
             // Move rockets
             for (var i = 0; i < rockets.length; i++) {
@@ -248,19 +277,48 @@
 
                     currentScore = currentScore + Math.ceil(nextEnemy.scoreExpiration);
                     if (currentScore > 500) {
-                        rocketAcceleration = 0.4
+                        if (rocketAcceleration < 0.4) {
+                            document.getElementById("weapons").innerHTML += "</br>Speed 1"
+                            rocketAcceleration = 0.4
+                        }
                     }
                     if (currentScore > 2000) {
-                        rocketAcceleration = 0.6
+                        if (rocketAcceleration < 0.6) {
+                            rocketAcceleration = 0.6
+                            document.getElementById("weapons").innerHTML += "</br>Speed 2"
+                        }
                     }
                     if (currentScore > 8000) {
-                        rocketAcceleration = 1.5
+                        if (rocketAcceleration < 1.5) {
+                            rocketAcceleration = 1.5
+                            document.getElementById("weapons").innerHTML += "</br>Ultra speed"
+                        }
                     }
-
                     if (currentScore > 10000) {
-                        doubleGun = true;
+                        if (!doubleGun) {
+                            doubleGun = true;
+                            document.getElementById("weapons").innerHTML += "</br>Double gun"
+                        }
                     }
                     document.getElementById("score").innerText = currentScore + " Points";
+                    document.getElementById("enemies").innerText = enemies.length;
+                    if (enemies.length == 0) {
+                        var gameover = document.createElement("div")
+                        gameover.style.left = canvas.offsetWidth / 2 - 150 + "px";
+                        gameover.style.top = canvas.offsetHeight / 2 - 100 + "px";
+                        gameover.style.width = "300px";
+                        gameover.style.height = "150px";
+                        gameover.style.position = "absolute";
+                        gameover.style.fontSize = 30 + "px";
+                        gameover.style.fontWeight = "bold";
+                        gameover.style.textAlign = "center";
+                        gameover.style.color = "red";
+                        gameover.style.paddingTop = "50px"
+                        gameover.style.border = "red 3px solid";
+                        gameover.style.backgroundColor = "rgba(255,255,255,0.7)";
+                        gameover.innerHTML = "GAME OVER</br>" + currentScore + " POINTS</br><span style='font-size:20px; color:black;''>(press F5 to restart)</span>"
+                        canvas.appendChild(gameover);
+                    }
 
                 }
             })
