@@ -4,6 +4,15 @@
 <head>
     <title>Spaco</title>
     <style>
+        *,
+        *::after,
+        *::before {
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            -webkit-app-region: no-drag;
+            cursor: default;
+        }
+
         body {
             overflow: hidden;
             margin: 0px;
@@ -20,360 +29,396 @@
 
 <body style="height:100%; width:100%;">
 
-    <div id="mybody" style="height:100%; width:100%;">
+    <div
+        style="float:right; padding-left:10px; height:100%; width:100px; z-index: 200;color:white; border: solid black 2px; background-color:rgba(0, 0, 0, 0.8);">
+        <h2>Score:</h2>
+        <span id="score" style="color: green; font-weight:bold; ">0 Points</span>
+    </div>
+
+    <div id="mybody" style="height:100%;">
         <img src="/img/Ship3.png" style="position: absolute; left:200px; bottom:50px;" width="50px" height="50px"
             id="square2" />
 
-        <div style="padding-left:10px; height:100px; width:100px; position:absolute; right:250px;z-index: inherit 200;color:white; border: solid white 2px; background-color:rgba(255, 255, 255, 0.8);">
-            <h2>Score:</h2>
-            <span id="score" style="color: green; font-weight:bold; ">0 Points</span>
-        </div>
+    </div>
+
+    <script>
+        var lastMouseX = 0;
+        var lastMouseY = 0;
+        var currentScore = 0;
+        var doubleGun = false;
+        var rocketAcceleration = 0.2;
+
+        var canvas = document.getElementById("mybody");
+        var screenWidth = canvas.offsetWidth;
+
+        window.onresize = ev => {
+            var canvas = document.getElementById("mybody");
+            screenWidth = canvas.offsetWidth;
+        };
+
+        function calcX(baseX) {
+            return Math.round(baseX / 1000 * screenWidth);
+        }
+
+        document.getElementById("mybody").onmousemove = mousemoved;
+        document.getElementById("mybody").onclick = mouseclicked;
+
+        var audioPlaying = false;
+        function playBackground() {
+            if (audioPlaying) return;
+
+            audioPlaying = true;
+
+            var audio = new Audio('sound/background.mp3');
+            audio.volume = 0.5;
+            audio.loop = true;
+            audio.play();
+        }
+
+        var explosions = [];
+        var rockets = [];
+        var enemies = [];
+        var scores = [];
+
+        var path1 = [
+            {
+                x: 0,
+                y: 0,
+                speed: 10
+            },
+            {
+                x: 475,
+                y: 200,
+                speed: 5
+            },
+            {
+                x: 475,
+                y: 20,
+                speed: 2
+            },
+
+        ]
+        var path2 = [
+            {
+                x: 950,
+                y: 0,
+                speed: 2
+            },
+            {
+                x: 525,
+                y: 200,
+                speed: 2
+            },
+            {
+                x: 525,
+                y: 20,
+                speed: 2
+            },
+        ]
+        var path3 = [
+            {
+                x: 0,
+                y: 250,
+                speed: 2
+            },
+            {
+                x: 950,
+                y: 250,
+                speed: 20
+            },
+        ]
+
+        createFormation("/img/Enemy1.png", path1, 15, 50, 12, 500)
+        createFormation("/img/Enemy2.png", path2, 15, 500, 12, 1000)
+        createFormation("/img/Enemy3.png", path3, 5, 0, 12, 10)
 
 
-        <script>
-            var lastMouseX = 0;
-            var lastMouseY = 0;
-            var currentScore = 0;
-
-            document.getElementById("mybody").onmousemove = mousemoved;
-            document.getElementById("mybody").onclick = mouseclicked;
+        createFormation("/img/Enemy1.png", path1, 15, 1050, 12, 500)
+        createFormation("/img/Enemy2.png", path2, 15, 1500, 12, 1000)
+        createFormation("/img/Enemy3.png", path3, 5, 1000, 12, 10)
 
 
 
-            var audioPlaying = false;
-            function playBackground() {
-                if (audioPlaying) return;
+        
+        setInterval(mainGameloop, 20);
 
-                audioPlaying = true;
+        function mainGameloop() {
 
-                var audio = new Audio('sound/background.mp3');
-                audio.volume = 0.5;
-                audio.loop = true;
-                audio.play();
+            // Remove explosions after TimetoLive expires
+            for (var i = 0; i < explosions.length; i++) {
+                var nextExplosion = explosions[i];
+                nextExplosion.timeToLive = nextExplosion.timeToLive - 1;
+                if (nextExplosion.timeToLive <= 0) {
+                    hideElement(nextExplosion.explosion);
+                    explosions.splice(i, 1);
+                }
             }
 
-            var explosions = [];
-            var rockets = [];
-            var enemies = [];
-            var scores = [];
-
-            var path1 = [
-                {
-                    x: 0,
-                    y: 0,
-                    speed: 10
-                },
-                {
-                    x: 475,
-                    y: 200,
-                    speed: 5
-                },
-                {
-                    x: 475,
-                    y: 20,
-                    speed: 2
-                },
-            ]
-            var path2 = [
-                {
-                    x: 1000,
-                    y: 0,
-                    speed: 2
-                },
-                {
-                    x: 525,
-                    y: 200,
-                    speed: 2
-                },
-                {
-                    x: 525,
-                    y: 20,
-                    speed: 2
-                },
-            ]
-            var path3 = [
-                {
-                    x: 0,
-                    y: 250,
-                    speed: 2
-                },
-                {
-                    x: 1000,
-                    y: 250,
-                    speed: 20
-                },
-            ]
-
-            createFormation("/img/Enemy1.png", path1, 15, 50, 12, 500)
-            createFormation("/img/Enemy2.png", path2, 15, 500, 12, 1000)
-            createFormation("/img/Enemy3.png", path3, 5, 0, 12, 10)
 
 
-            setInterval(mainGameloop, 20);
+            // Move rockets
+            for (var i = 0; i < rockets.length; i++) {
+                var nextRocket = rockets[i];
+                nextRocket.timeToLive = nextRocket.timeToLive - 1;
+                var canvas = document.getElementById("mybody");
+                if (nextRocket.yPosition >= canvas.offsetHeight - 10) {
+                    // createExplosion(nextRocket.xPosition - 18, nextRocket.yPosition);
+                    hideElement(nextRocket.rocket);
+                    rockets.splice(i, 1);
+                } else {
+                    nextRocket.speed = nextRocket.speed + rocketAcceleration;
+                    nextRocket.yPosition = nextRocket.yPosition + nextRocket.speed;
+                    nextRocket.rocket.style.bottom = nextRocket.yPosition + "px";
+                }
+            }
+            // Move enemies
+            enemies.forEach((nextEnemy, index) => {
+                if (nextEnemy.spawntime > 0) {
+                    nextEnemy.spawntime -= 1
+                    return
+                }
+                if (nextEnemy.spawntime == 0 && (!nextEnemy.scoreExpiration || nextEnemy.scoreExpiration > 0)) {
+                    nextEnemy.spawntime -= 1
+                    nextEnemy.enemy.style.left = calcX(nextEnemy.path[0].x) - 25 + "px"
+                    nextEnemy.enemy.style.top = nextEnemy.path[0].y + "px"
+                    nextEnemy.xPosition = nextEnemy.path[0].x
+                    nextEnemy.yPosition = nextEnemy.path[0].y
 
-            function mainGameloop() {
 
-               
+                    var canvas = document.getElementById("mybody");
+                    canvas.insertAdjacentElement("afterbegin", nextEnemy.enemy);
+                    return
+                }
+                var destination = nextEnemy.path[nextEnemy.nextwaypoint]
+                nextEnemy.scoreExpiration *= 0.995
+                var speed = destination.speed
+                var start = nextEnemy.path[nextEnemy.nextwaypoint - 1 < 0 ? nextEnemy.path.length - 1 : nextEnemy.nextwaypoint - 1]
+                var a = destination.y - start.y
+                var b = destination.x - start.x
+                var c = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2))
+                var deltaX = speed * b / c
+                var deltaY = speed * a / c
 
+                nextEnemy.xPosition += deltaX
+                nextEnemy.yPosition += deltaY
 
-
-                // Remove explosions after TimetoLive expires
-                for (var i = 0; i < explosions.length; i++) {
-                    var nextExplosion = explosions[i];
-                    nextExplosion.timeToLive = nextExplosion.timeToLive - 1;
-                    if (nextExplosion.timeToLive <= 0) {
-                        hideElement(nextExplosion.explosion);
-                        explosions.splice(i, 1);
-                    }
+                if (deltaX > 0 && Math.ceil(nextEnemy.xPosition) >= destination.x) {
+                    nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
+                    nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
+                    nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
+                }
+                else if (deltaY < 0 && Math.floor(nextEnemy.yPosition) <= destination.y) {
+                    nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
+                    nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
+                    nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
+                }
+                else if (deltaY > 0 && Math.ceil(nextEnemy.yPosition) >= destination.y) {
+                    nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
+                    nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
+                    nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
+                }
+                else if (deltaX < 0 && Math.floor(nextEnemy.xPosition) <= destination.x) {
+                    nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
+                    nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
+                    nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
                 }
 
+                nextEnemy.enemy.style.left = calcX(nextEnemy.xPosition) - 25 + "px"
+                nextEnemy.enemy.style.top = nextEnemy.yPosition + "px"
 
+                var booom = rockets.reduce((booomed, nextRocket, i) => {
 
-                // Move rockets
-                for (var i = 0; i < rockets.length; i++) {
-                    var nextRocket = rockets[i];
-                    nextRocket.timeToLive = nextRocket.timeToLive - 1;
-                    var canvas = document.getElementById("mybody");
-                    if (nextRocket.yPosition >= canvas.offsetHeight - 10) {
-                        // createExplosion(nextRocket.xPosition - 18, nextRocket.yPosition);
+                    var bamed = checkCollision(nextEnemy, nextRocket);
+                    if (bamed) {
                         hideElement(nextRocket.rocket);
                         rockets.splice(i, 1);
-                    } else {
-                        nextRocket.speed = nextRocket.speed + 0.6;
-                        nextRocket.yPosition = nextRocket.yPosition + nextRocket.speed;
-                        nextRocket.rocket.style.bottom = nextRocket.yPosition + "px";
                     }
+
+                    return booomed || bamed
+
+                }, false);
+
+                if (booom) {
+                    var canvas = document.getElementById("mybody");
+                    nextEnemy.enemy.style.display = "none";
+                    enemies.splice(index, 1);
+                    showScoreOnDeath(nextEnemy, 100);
+
+                    createExplosion(nextEnemy.xPosition, canvas.offsetHeight - nextEnemy.yPosition - 50);
+
+                    currentScore = currentScore + Math.ceil(nextEnemy.scoreExpiration);
+                    if (currentScore > 500) {
+                        rocketAcceleration = 0.4
+                    }
+                    if (currentScore > 2000) {
+                        rocketAcceleration = 0.6
+                    }
+                    if (currentScore > 8000) {
+                        rocketAcceleration = 1.5
+                    }
+
+                    if (currentScore > 10000) {
+                        doubleGun = true;
+                    }
+                    document.getElementById("score").innerText = currentScore + " Points";
+
                 }
-                // Move enemies
-                enemies.forEach((nextEnemy, index) => {
-                    if (nextEnemy.spawntime > 0) {
-                        nextEnemy.spawntime -= 1
-                        return
-                    }
-                    if (nextEnemy.spawntime == 0 && (!nextEnemy.scoreExpiration || nextEnemy.scoreExpiration > 0)) {
-                        nextEnemy.spawntime -= 1
-                        nextEnemy.enemy.style.left = nextEnemy.path[0].x + "px"
-                        nextEnemy.enemy.style.top = nextEnemy.path[0].y + "px"
-                        nextEnemy.xPosition = nextEnemy.path[0].x
-                        nextEnemy.yPosition = nextEnemy.path[0].y
+            })
 
-
-                        var canvas = document.getElementById("mybody");
-                        canvas.insertAdjacentElement("afterbegin", nextEnemy.enemy);
-                        return
-                    }
-                    var destination = nextEnemy.path[nextEnemy.nextwaypoint]
-                    nextEnemy.scoreExpiration *= 0.995
-                    var speed = destination.speed
-                    var start = nextEnemy.path[nextEnemy.nextwaypoint - 1 < 0 ? nextEnemy.path.length - 1 : nextEnemy.nextwaypoint - 1]
-                    var a = destination.y - start.y
-                    var b = destination.x - start.x
-                    var c = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2))
-                    var deltaX = speed * b / c
-                    var deltaY = speed * a / c
-
-                    nextEnemy.xPosition += deltaX
-                    nextEnemy.yPosition += deltaY
-
-                    if (deltaX > 0 && Math.ceil(nextEnemy.xPosition) >= destination.x) {
-                        nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
-                        nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
-                        nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
-                    }
-                    else if (deltaY < 0 && Math.floor(nextEnemy.yPosition) <= destination.y) {
-                        nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
-                        nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
-                        nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
-                    }
-                    else if (deltaY > 0 && Math.ceil(nextEnemy.yPosition) >= destination.y) {
-                        nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
-                        nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
-                        nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
-                    }
-                    else if (deltaX < 0 && Math.floor(nextEnemy.xPosition) <= destination.x) {
-                        nextEnemy.xPosition = nextEnemy.path[nextEnemy.nextwaypoint].x;
-                        nextEnemy.yPosition = nextEnemy.path[nextEnemy.nextwaypoint].y;
-                        nextEnemy.nextwaypoint = nextEnemy.nextwaypoint >= nextEnemy.path.length - 1 ? 0 : nextEnemy.nextwaypoint + 1
-                    }
-
-                    nextEnemy.enemy.style.left = nextEnemy.xPosition + "px"
-                    nextEnemy.enemy.style.top = nextEnemy.yPosition + "px"
-
-                    var booom = rockets.reduce((booomed, nextRocket, i) => {
-
-                        var bamed = checkCollision(nextEnemy, nextRocket);
-                        if (bamed) {
-                            hideElement(nextRocket.rocket);
-                            rockets.splice(i, 1);
-                        }
-                        
-                        return booomed || bamed
-
-                    }, false);
-
-                    if (booom) {
-                        var canvas = document.getElementById("mybody");
-                        nextEnemy.enemy.style.display = "none";
-                        enemies.splice(index, 1);
-                        showScoreOnDeath(nextEnemy, 100);
-                        
-                        createExplosion(nextEnemy.xPosition, canvas.offsetHeight - nextEnemy.yPosition - 50);
-
-                        currentScore = currentScore + Math.ceil(nextEnemy.scoreExpiration);
-                        document.getElementById("score").innerText = currentScore + " Points";
-                        
-                    }
-                })
-
-                //Remove scoreOnDeath after timetoLive expires
-                for (var i = 0; i < scores.length; i++) {
-                    var scoreOnDeath = scores[i];
-                    scoreOnDeath.timeToLive -= 1;
-                    if (scoreOnDeath.timeToLive == 0) {
-                        hideElement(scoreOnDeath.scoreDisplay)
-                    }
+            //Remove scoreOnDeath after timetoLive expires
+            for (var i = 0; i < scores.length; i++) {
+                var scoreOnDeath = scores[i];
+                scoreOnDeath.timeToLive -= 1;
+                if (scoreOnDeath.timeToLive == 0) {
+                    hideElement(scoreOnDeath.scoreDisplay)
                 }
-                //Decrease scoreOnDeath over time
+            }
+            //Decrease scoreOnDeath over time
+        }
+
+        function mouseclicked(mouseEvent) {
+            playBackground();
+            if (doubleGun) {
+                createRocket(lastMouseX - (55 * 1000 / screenWidth), 65);
+                createRocket(lastMouseX - (12 * 1000 / screenWidth), 65);
+            } else {
+                createRocket(lastMouseX - (33 * 1000 / screenWidth), 65);
+            }
+        }
+
+        function createRocket(x, y) {
+
+            // create new rocket element
+            var newRocket = document.createElement("img");
+            newRocket.src = "/img/rocket.gif";
+            newRocket.style.position = "absolute";
+            newRocket.style.bottom = y + "px";
+            newRocket.style.left = calcX(x) + "px"
+            newRocket.style.width = "15px"
+            newRocket.style.height = "20px"
+
+            var canvas = document.getElementById("mybody");
+            canvas.insertAdjacentElement("afterbegin", newRocket);
+
+            rockets.push({ rocket: newRocket, timeToLive: 30 + Math.random() * 15, speed: 1, xPosition: x, yPosition: y })
+            var audio = new Audio('sound/Gun.mp3');
+            audio.volume = Math.random() / 2;
+            audio.play();
+
+        }
+
+
+        function createExplosion(x, y) {
+
+            // create new explosion element
+            var newExplosion = document.createElement("img");
+            newExplosion.src = "/img/explosion.gif";
+            newExplosion.style.position = "absolute";
+            newExplosion.style.bottom = y + "px";
+            newExplosion.style.left = calcX(x) - 25 + "px"
+            newExplosion.style.width = "50px"
+            newExplosion.style.height = "50px"
+
+            var canvas = document.getElementById("mybody");
+            canvas.insertAdjacentElement("afterbegin", newExplosion);
+
+            explosions.push({ explosion: newExplosion, timeToLive: 50 })
+            var audio = new Audio('sound/Explosion.mp3');
+            audio.volume = 0.5 + Math.random() / 2;
+            audio.play();
+        }
+
+        function hideElement(elementToHide) {
+            var canvas = document.getElementById("mybody");
+            canvas.removeChild(elementToHide);
+        }
+
+        function mousemoved(mouseEvent) {
+
+            if (!mouseEvent) return;
+            document.getElementById("square2").style.left = mouseEvent.clientX - 50 + "px";
+            lastMouseX = Math.round(mouseEvent.clientX * 1000 / screenWidth);
+            lastMouseY = mouseEvent.clientY;
+            // document.getElementById("square2").style.top = mouseEvent.clientY + "px";
+        }
+
+        function createFormation(image, flightPath, numberOfEnemies, initialSpawnTime, spawnDifference, scoreExpiration) {
+
+            let currentSpawnTime = initialSpawnTime;
+            for (let i = 0; i < numberOfEnemies; i++) {
+                createEnemy1(image, flightPath, currentSpawnTime, scoreExpiration)
+                currentSpawnTime += spawnDifference;
             }
 
-            function mouseclicked(mouseEvent) {
-                playBackground();
-                createRocket(lastMouseX - 50, 65);
-            }
+        }
+        //show scoreOnDeath
+        function showScoreOnDeath(nextEnemy, timeToLive) {
 
-            function createRocket(x, y) {
+            var scoreDisplay = document.createElement("div")
 
-                // create new rocket element
-                var newRocket = document.createElement("img");
-                newRocket.src = "/img/rocket.gif";
-                newRocket.style.position = "absolute";
-                newRocket.style.bottom = y + "px";
-                newRocket.style.left = x + "px"
-                newRocket.style.width = "15px"
-                newRocket.style.height = "20px"
-
-                var canvas = document.getElementById("mybody");
-                canvas.insertAdjacentElement("afterbegin", newRocket);
-
-                rockets.push({ rocket: newRocket, timeToLive: 30 + Math.random() * 15, speed: 1, xPosition: x, yPosition: y })
-                var audio = new Audio('sound/Gun.mp3');
-                audio.volume = Math.random() / 2;
-                audio.play();
-
-            }
+            scoreDisplay.innerText = Math.ceil(nextEnemy.scoreExpiration)
+            scoreDisplay.style.position = "absolute"
+            scoreDisplay.style.fontSize = nextEnemy.scoreExpiration > 200 ? "40px" : "20px"
+            scoreDisplay.style.color = nextEnemy.scoreExpiration > 200 ? "lightgreen" : "yellow"
+            scoreDisplay.style.width = "50px"
+            scoreDisplay.style.height = "50px"
 
 
-            function createExplosion(x, y) {
-
-                // create new explosion element
-                var newExplosion = document.createElement("img");
-                newExplosion.src = "/img/explosion.gif";
-                newExplosion.style.position = "absolute";
-                newExplosion.style.bottom = y + "px";
-                newExplosion.style.left = x + "px"
-                newExplosion.style.width = "50px"
-                newExplosion.style.height = "50px"
-
-                var canvas = document.getElementById("mybody");
-                canvas.insertAdjacentElement("afterbegin", newExplosion);
-
-                explosions.push({ explosion: newExplosion, timeToLive: 50 })
-                var audio = new Audio('sound/Explosion.mp3');
-                audio.volume = 0.5 + Math.random() / 2;
-                audio.play();
-            }
-
-            function hideElement(elementToHide) {
-                var canvas = document.getElementById("mybody");
-                canvas.removeChild(elementToHide);
-            }
-
-            function mousemoved(mouseEvent) {
-
-                if (!mouseEvent) return;
-                document.getElementById("square2").style.left = mouseEvent.clientX - 50 + "px";
-                lastMouseX = mouseEvent.clientX;
-                lastMouseY = mouseEvent.clientY;
-                // document.getElementById("square2").style.top = mouseEvent.clientY + "px";
-            }
-
-            function createFormation(image, flightPath, numberOfEnemies, initialSpawnTime, spawnDifference, scoreExpiration) {
-
-                let currentSpawnTime = initialSpawnTime;
-                for (let i = 0; i < numberOfEnemies; i++) {
-                    createEnemy1(image, flightPath, currentSpawnTime, scoreExpiration)
-                    currentSpawnTime += spawnDifference;
-                }
-
-            }
-            //show scoreOnDeath
-            function showScoreOnDeath(nextEnemy, timeToLive) {
-
-                var scoreDisplay = document.createElement("div")
-
-                scoreDisplay.innerText = Math.ceil(nextEnemy.scoreExpiration)
-                scoreDisplay.style.position = "absolute"
-                scoreDisplay.style.fontSize = nextEnemy.scoreExpiration > 200 ? "40px" : "20px"
-                scoreDisplay.style.color = nextEnemy.scoreExpiration > 200 ? "lightgreen" : "yellow"
-                scoreDisplay.style.width = "50px"
-                scoreDisplay.style.height = "50px"
+            scoreDisplay.style.position = "absolute"
+            scoreDisplay.style.left = calcX(nextEnemy.xPosition) + "px"
+            scoreDisplay.style.top = nextEnemy.yPosition + "px"
+            scoreDisplay.style.zIndex = 100
 
 
-                scoreDisplay.style.position = "absolute"
-                scoreDisplay.style.left = nextEnemy.xPosition + "px"
-                scoreDisplay.style.top = nextEnemy.yPosition + "px"
-                scoreDisplay.style.zIndex = 100
+            scores.push({
+                scores: nextEnemy.scoreExpiration,
+                scoreExpiration: nextEnemy.scoreExpiration,
+                timeToLive: timeToLive,
+                xPosition: nextEnemy.xPosition,
+                yPosition: nextEnemy.yPosition,
+                scoreDisplay: scoreDisplay
+
+            })
+
+            var canvas = document.getElementById("mybody");
+            canvas.insertAdjacentElement("afterbegin", scoreDisplay);
+
+        }
 
 
-                scores.push({
-                    scores: nextEnemy.scoreExpiration,
-                    scoreExpiration: nextEnemy.scoreExpiration,
-                    timeToLive: timeToLive,
-                    xPosition: nextEnemy.xPosition,
-                    yPosition: nextEnemy.yPosition,
-                    scoreDisplay: scoreDisplay
+        function createEnemy1(image, flightPath, spawnTime, scoreExpiration) {
 
-                })
+            //create new enemy1 element
+            var newEnemy = document.createElement("img")
+            newEnemy.src = image
+            newEnemy.style.position = "absolute"
+            newEnemy.style.width = "50px"
+            newEnemy.style.height = "50px"
 
-                var canvas = document.getElementById("mybody");
-                canvas.insertAdjacentElement("afterbegin", scoreDisplay);
+            enemies.push({
+                enemy: newEnemy,
+                spawntime: spawnTime,
+                scoreExpiration: scoreExpiration,
+                xPosition: 0,
+                yPosition: 0,
+                path: flightPath,
+                nextwaypoint: 1,
 
-            }
+            })
+
+        }
+        // Tracks Distance between Enemy and Rocket
+        function checkCollision(nextEnemy, nextRocket) {
+            var canvas = document.getElementById("mybody");
+            var distanceX = Math.abs(nextEnemy.xPosition - nextRocket.xPosition)
+            var distanceY = Math.abs(nextEnemy.yPosition - (canvas.offsetHeight - nextRocket.yPosition))
+
+            return calcX(distanceX) < 25 && calcX(distanceY) < 25
+        }
 
 
-            function createEnemy1(image, flightPath, spawnTime,scoreExpiration) {
 
-                //create new enemy1 element
-                var newEnemy = document.createElement("img")
-                newEnemy.src = image
-                newEnemy.style.position = "absolute"
-                newEnemy.style.width = "50px"
-                newEnemy.style.height = "50px"
-
-                enemies.push({
-                    enemy: newEnemy,
-                    spawntime: spawnTime,
-                    scoreExpiration: scoreExpiration,
-                    xPosition: 0,
-                    yPosition: 0,
-                    path: flightPath,
-                    nextwaypoint: 1,
-
-                })
-
-            }
-            // Tracks Distance between Enemy and Rocket
-            function checkCollision(nextEnemy, nextRocket) {
-                var canvas = document.getElementById("mybody");
-                var distanceX = Math.abs(nextEnemy.xPosition - nextRocket.xPosition)
-                var distanceY = Math.abs(nextEnemy.yPosition - (canvas.offsetHeight - nextRocket.yPosition))
-
-                return distanceX < 25 && distanceY < 25
-            }
-
-          
-            
-        </script>
+    </script>
 
 
 </body>

@@ -10,6 +10,28 @@ With this setting we finally set up a kubernetes cluster on Google Cloud Engine,
 
 At this point (February 2020) the result is available at <http://maxotar.vccserver.com>
 
+## Prerequisites
+
+### Downloads
+
+To continue on this, you will need at least (Development environment)
+
+- Visual Studio Code: <https://code.visualstudio.com/download>
+- Git: <https://git-scm.com/download/win>
+- TortoiseGit: <https://tortoisegit.org/download/>
+- NodeJs: <https://nodejs.org/en/download/>
+- Docker Desktop: <https://hub.docker.com/editions/community/docker-ce-desktop-windows>
+- Google Cloud SDK <https://cloud.google.com/sdk/docs/downloads-versioned-archives>
+
+### Configs
+
+- Activate Kubernetes Support <https://docs.docker.com/docker-for-windows/#kubernetes>
+- Configure Git: <https://docs.gitlab.com/ee/gitlab-basics/start-using-git.html#add-your-git-username-and-set-your-email>
+- Login to docker.hub
+  - Type: ```docker login```
+  - Enter user / password for docker hub
+- To deploy to the internet you need access to a public kubernetes cluster
+
 ## Update instruction
 
 Quick summary on how to continue to work on this. We also need to collect the prequisites that need to be installed.
@@ -19,7 +41,7 @@ Quick summary on how to continue to work on this. We also need to collect the pr
 1. Run visual Studio Code.
 2. Press Ctrl-Shift-P.
 3. Select "Open new external Terminal"
-4. In the terminal run 
+4. In the terminal run
 
    ```bash
    watch-http-server
