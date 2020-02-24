@@ -10,6 +10,16 @@ With this setting we finally set up a kubernetes cluster on Google Cloud Engine,
 
 At this point (February 2020) the result is available at <http://maxotar.vccserver.com>
 
+## Screenshots (v10)
+
+### Startscreen
+
+![startscreen](_docs/startscreen.png)
+
+### Gameplay
+
+![gameplay](_docs/gameplay.png)
+
 ## Prerequisites
 
 ### Downloads
