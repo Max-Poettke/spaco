@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
       - name: spaco
-        image: maxpoettke/spaco:v7
+        image: maxpoettke/spaco:v8
         ports:
         - containerPort: 80
